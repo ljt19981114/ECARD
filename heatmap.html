@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=LGujiUFvDd2vHGGx4knXKKTBaeMdDj7H"></script>
+    <script type="text/javascript" src="http://api.map.baidu.com/library/Heatmap/2.0/src/Heatmap_min.js"></script>
+<!--    <script src="http://api.map.baidu.com/api?type=webgl&v=1.0&ak=LGujiUFvDd2vHGGx4knXKKTBaeMdDj7H"></script>-->
+    <title>热力图功能示例</title>
+    <style type="text/css">
+        ul,li{list-style: none;margin:0;padding:0;float:left;}
+        html{height:100%}
+        body{height:100%;margin:0px;padding:0px;font-family:"微软雅黑";}
+        #container{height:90%;width:100%;}
+        #r-result{width:100%;}
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="r-result">
+        <input type="button"  onclick="openHeatmap();" value="显示热力图"/><input type="button"  onclick="closeHeatmap();" value="关闭热力图"/>
+    </div>
+    <form name="reg_testdate">
+        <select name="YYYY" onChange="YYYYDD(this.value)">
+            <option value="">请选择 年</option>
+        </select>
+        <select name="MM" onChange="MMDD(this.value)">
+            <option value="">选择 月</option>
+        </select>
+        <select name="DD" onChange="DDD(this.value)">
+            <option value="">选择 日</option>
+        </select>
+        <select name="HH" onChange="HHH(this.value)">
+            <option value="">选择 时</option>
+        </select>
+        <select name="BO" onChange="BOARD(this.value)">
+            <option value="">选择 上车下车</option>
+        </select>
+        <select name="VE" onChange="VEH(this.value)">
+            <option value="">选择 地铁公交</option>
+        </select>
+        <select name="ST" onChange="STA(this.value)">
+            <option value="">选择 站点</option>
+        </select>
+    </form>
+</body>
+</html>
+<script type="text/javascript">
+    var map = new BMap.Map("container");          // 创建地图实例
+    var point = new BMap.Point(116.36003,39.9305);
+    map.centerAndZoom(point, 12);             // 初始化地图，设置中心点坐标和地图级别
+    map.enableScrollWheelZoom(); // 允许滚轮缩放
+    heatmapOverlay = new BMapLib.HeatmapOverlay({"radius":45});
+    //map.addOverlay(heatmapOverlay);
+    var vehicle = 'metro'
+    var year = '2020';
+    var month = '10';
+    var day = '03';
+    var hour = '9';
+    var board = 'onboard'
+
+    //绘图测试
+
+
+    //
+
+    var changeDD = 1;//->一个全局变量
+    function YYYYMMDDstart() {
+        MonHead = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        //先给年下拉框赋内容
+        var y = new Date().getFullYear();
+        for (var i = (y - 4); i < (y + 1); i++) //以今年为准，前30年，后30年
+            document.reg_testdate.YYYY.options.add(new Option(" " + i + " 年", i));
+        //赋月份的下拉框
+        for (var i = 1; i < 13; i++)
+            document.reg_testdate.MM.options.add(new Option(" " + i + " 月", i));
+        document.reg_testdate.YYYY.value = y;
+        document.reg_testdate.MM.value = new Date().getMonth() + 1;
+        var n = MonHead[new Date().getMonth()];
+        if (new Date().getMonth() == 1 && IsPinYear(YYYYvalue)) n++;
+        writeDay(n); //赋日期下拉框
+        document.reg_testdate.HH.value = 1
+        //小时
+        for (var i = 1; i < 25; i++)
+            document.reg_testdate.HH.options.add(new Option(" " + i + " 时", i));
+        //上下车
+        document.reg_testdate.BO.options.add(new Option("上车"))
+        document.reg_testdate.BO.options.add(new Option("下车"))
+        //地铁公交
+        document.reg_testdate.VE.options.add(new Option("地铁"))
+        document.reg_testdate.VE.options.add(new Option("公交"))
+        //->赋值给日，为当天日期
+//        document.reg_testdate.DD.value = new Date().getDate();
+    }
+    if (document.attachEvent)
+        window.attachEvent("onload", YYYYMMDDstart);
+    else
+        window.addEventListener('load', YYYYMMDDstart, false);
+
+    function YYYYDD(str) //年发生变化时日期发生变化(主要是判断闰平年)
+    {
+        var MMvalue = document.reg_testdate.MM.options[document.reg_testdate.MM.selectedIndex].value;
+        if (MMvalue == "") {
+//            var e = document.reg_testdate.DD;
+            optionsClear(e);
+            return;
+        }
+        var n = MonHead[MMvalue - 1];
+        if (MMvalue == 2 && IsPinYear(str)) n++;
+        writeDay(n)
+        year = str;
+    }
+
+    function MMDD(str) //月发生变化时日期联动
+    {
+        var YYYYvalue = document.reg_testdate.YYYY.options[document.reg_testdate.YYYY.selectedIndex].value;
+        if (YYYYvalue == "") {
+            var e = document.reg_testdate.DD;
+            optionsClear(e);
+            return;
+        }
+        var n = MonHead[str - 1];
+        if (str == 2 && IsPinYear(YYYYvalue)) n++;
+        writeDay(n)
+        month = str;
+        if (str.length<2)
+            month = '0'+str;
+    }
+
+    function writeDay(n) //据条件写日期的下拉框
+    {
+        var e = document.reg_testdate.DD;
+        optionsClear(e);
+        for (var i = 1; i < (n + 1); i++)
+        {
+            e.options.add(new Option(" " + i + " 日", i));
+            if(i == changeDD){
+                e.options[i].selected = true;  //->保持选中状态
+            }
+        }
+    }
+    function HHH(str){
+        hour = str;
+    }
+
+    function BOARD(str){
+        if (str=="上车")
+            board = "onboard";
+        else
+            board = "offboard";
+    }
+
+    function VEH(str){
+        if (str=="公交")
+            vehicle = "bus";
+        else
+            vehicle = "metro";
+    }
+    function IsPinYear(year) //判断是否闰平年
+    {
+        return (0 == year % 4 && (year % 100 != 0 || year % 400 == 0));
+    }
+
+    function optionsClear(e) {
+        e.options.length = 1;
+    }
+    //->随时监听日的改变
+    function DDD(str){
+        changeDD = str;
+        day = str;
+        if (str.length<2) day = '0'+str;
+    }
+
+
+
+
+function load(name) {
+     let xhr = new XMLHttpRequest(),
+        okStatus = document.location.protocol === "file:" ? 0 : 200;
+        xhr.open('GET', name, false);
+        xhr.overrideMimeType("text/html;charset=utf-8");//默认为utf-8
+        xhr.send(null);
+        return xhr.status === okStatus ? xhr.responseText : null;
+    }
+//document.write(text);  //打印在网页中
+
+//document.write("<pre>"+text+"<pre/>");  //解决txt的换行无法打印到网页上的问题
+
+
+    if(!isSupportCanvas()){
+        alert('热力图目前只支持有canvas支持的浏览器,您所使用的浏览器不能使用热力图功能~')
+    }
+    //详细的参数,可以查看heatmap.js的文档 https://github.com/pa7/heatmap.js/blob/master/README.md
+    //参数说明如下:
+    /* visible 热力图是否显示,默认为true
+     * opacity 热力的透明度,1-100
+     * radius 势力图的每个点的半径大小
+     * gradient  {JSON} 热力图的渐变区间 . gradient如下所示
+     *  {
+            .2:'rgb(0, 255, 255)',
+            .5:'rgb(0, 110, 255)',
+            .8:'rgb(100, 0, 255)'
+        }
+        其中 key 表示插值的位置, 0~1.
+            value 为颜色值.
+     */
+
+    //是否显示热力图
+
+    function openHeatmap(){
+        var cwd = year+'/'+month+'/'+day+'/'+board+'/'
+        var cwd_json = year+'_json/'+month+'/'+day+'/'+board+'/'
+        //读取热力点数据
+        points_txt = [];
+        points = [];
+        // var filename = vehicle+'_'+year+month+day+'_'+hour+'.txt';
+        //
+        // var text = load(cwd+filename);
+        // let text_ls = text.split(",\r\n")
+        // for (i = 0; i < text_ls.length-1; i++) {
+        //     let tmp = text_ls[i]
+        //     var reg = /[\d.]+/g;
+        //     var numlist = tmp.match(reg)
+        //     var dic = {lat: parseFloat(numlist[0]), lng: parseFloat(numlist[1]), count: parseInt(numlist[2])}
+        //     points_txt.push(dic)
+        // }
+
+        //读取站点信息数据
+
+        var filename = vehicle+'_'+year+month+day+'_'+hour+'.json';
+        fetch(cwd_json+filename).then(rs => {
+            return rs.json();
+            }).then(rs => {
+        rs = rs.data;
+        //var data = [];
+        for (var i = 0; i < rs.length; i++) {
+                var numlist = rs[i];
+                var dic = {lat: parseFloat(numlist[1]), lng: parseFloat(numlist[2]), count: parseInt(numlist[3])}
+                points.push(dic);
+                var opts = {
+                    position: new BMap.Point(parseFloat(numlist[2]), parseFloat(numlist[1])), // 指定文本标注所在的地理位置
+                    offset: new BMap.Size(-50,-50) // 设置文本偏移量
+                };
+                //创建文本标注对象
+                var label = new BMap.Label(numlist[0], opts);
+                // 自定义文本标注样式
+                label.setStyle({
+                        color: 'blue',
+                        borderRadius: '5px',
+                        borderColor: '#ccc',
+                        padding: '10px',
+                        fontSize: '16px',
+                        height: '30px',
+                        lineHeight: '30px',
+                        fontFamily: '微软雅黑'
+                });
+                map.addOverlay(label);
+            }
+            map.addOverlay(heatmapOverlay);
+            heatmapOverlay.setDataSet({data:points,max:1000});
+            heatmapOverlay.show();
+        });
+    }
+    function closeHeatmap(){
+       map.clearOverlays()
+        heatmapOverlay.hide();
+    }
+    //closeHeatmap();
+    function setGradient(){
+        /*格式如下所示:
+        {
+            0:'rgb(102, 255, 0)',
+            .5:'rgb(255, 170, 0)',
+            1:'rgb(255, 0, 0)'
+        }*/
+        var gradient = {};
+        var colors = document.querySelectorAll("input[type='color']");
+        colors = [].slice.call(colors,0);
+        colors.forEach(function(ele){
+            gradient[ele.getAttribute("data-key")] = ele.value;
+        });
+        heatmapOverlay.setOptions({"gradient":gradient});
+    }
+    //判断浏览区是否支持canvas
+    function isSupportCanvas(){
+        var elem = document.createElement('canvas');
+        return !!(elem.getContext && elem.getContext('2d'));
+    }
+</script>
