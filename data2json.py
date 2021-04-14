@@ -129,7 +129,7 @@ def solve_data_day(df,type,scale,date,board):
         x_data = [str(i) for i in range(24)]
         plt.xlabel("time_slot")
         plt.ylabel("flow")
-        plt.plot(x_data, y_data, color='red', linewidth=2.0, linestyle='--')
+        plt.plot(x_data, y_data, color='red', linewidth=2.0)
         pic_name = date + '_' +board + '_' + type + ".jpg"
         plt.savefig("day_fig/"+pic_name)
         plt.clf()
