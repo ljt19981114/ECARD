@@ -13,12 +13,16 @@
         body{height:100%;margin:0px;padding:0px;font-family:"微软雅黑";}
         #container{height:90%;width:100%;}
         #r-result{width:100%;}
+        #station_name{width:100%;}
     </style>
 </head>
 <body>
     <div id="container"></div>
     <div id="r-result">
         <input type="button"  onclick="openHeatmap();" value="显示热力图"/><input type="button"  onclick="closeHeatmap();" value="关闭热力图"/>
+    </div>
+    <div id="station_name">
+        <input type="button"  onclick="openStation();" value="显示站点名"/><input type="button"  onclick="closeStation();" value="关闭站点名"/>
     </div>
     <form name="reg_testdate">
         <select name="YYYY" onChange="YYYYDD(this.value)">
@@ -237,6 +241,33 @@ function load(name) {
                 var numlist = rs[i];
                 var dic = {lat: parseFloat(numlist[1]), lng: parseFloat(numlist[2]), count: parseInt(numlist[3])}
                 points.push(dic);
+            }
+            map.addOverlay(heatmapOverlay);
+            heatmapOverlay.setDataSet({data:points,max:1000});
+            heatmapOverlay.show();
+        });
+    }
+    function closeHeatmap(){
+        heatmapOverlay.hide();
+    }
+
+label_ls = []
+    function openStation(){
+        label_ls.length = 0
+        var cwd_json = year+'_json/'+month+'/'+day+'/'+board+'/'
+        //读取热力点数据
+        points_txt = [];
+        points = [];
+        var filename = vehicle+'_'+year+month+day+'_'+hour+'.json';
+        fetch(cwd_json+filename).then(rs => {
+            return rs.json();
+            }).then(rs => {
+        rs = rs.data;
+        //var data = [];
+        for (var i = 0; i < rs.length; i++) {
+                var numlist = rs[i];
+                var dic = {lat: parseFloat(numlist[1]), lng: parseFloat(numlist[2]), count: parseInt(numlist[3])}
+                points.push(dic);
                 var opts = {
                     position: new BMap.Point(parseFloat(numlist[2]), parseFloat(numlist[1])), // 指定文本标注所在的地理位置
                     offset: new BMap.Size(-50,-50) // 设置文本偏移量
@@ -255,15 +286,16 @@ function load(name) {
                         fontFamily: '微软雅黑'
                 });
                 map.addOverlay(label);
+                label_ls.push(label)
             }
-            map.addOverlay(heatmapOverlay);
-            heatmapOverlay.setDataSet({data:points,max:1000});
-            heatmapOverlay.show();
         });
     }
-    function closeHeatmap(){
-       map.clearOverlays()
-        heatmapOverlay.hide();
+    function closeStation(){
+        console.log(label_ls.length)
+        for (var i = 0; i < label_ls.length; i++)
+        {
+            map.removeOverlay(label_ls[i])
+        }
     }
     //closeHeatmap();
     function setGradient(){
