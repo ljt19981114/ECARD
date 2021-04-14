@@ -160,6 +160,10 @@ if __name__ == '__main__':
     month = '09'
     day = '03'
     date = year+month+day
+    if os.path.exists('day_fig'):
+        pass
+    else:
+        os.mkdir('day_fig')
     #参数配置
 
     #测试区

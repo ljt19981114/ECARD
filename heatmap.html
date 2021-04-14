@@ -11,18 +11,35 @@
         ul,li{list-style: none;margin:0;padding:0;float:left;}
         html{height:100%}
         body{height:100%;margin:0px;padding:0px;font-family:"微软雅黑";}
-        #container{height:90%;width:100%;}
+        #cont{display: flex;height: 90%;}
+        #container{height:90%;width:50%;}
+        #container_2{display: flex;flex-direction: column;height:90%;width:50%;}
+        #day_cont{height:60%;width:50%;}
+        #week_cont{height:60%;width:50%;}
+        #month_cont{height:60%;width:50%;}
+        #year_cont{height:60%;width:50%;}
         #r-result{width:100%;}
         #station_name{width:100%;}
     </style>
 </head>
 <body>
-    <div id="container"></div>
+    <div id="cont">
+        <div id="container"></div>
+        <div id="container_2">
+           <div id="day_cont"></div>
+           <div id="week_cont"></div>
+           <div id="month_cont"></div>
+           <div id="year_cont"></div>
+        </div>
+    </div>
     <div id="r-result">
         <input type="button"  onclick="openHeatmap();" value="显示热力图"/><input type="button"  onclick="closeHeatmap();" value="关闭热力图"/>
     </div>
     <div id="station_name">
         <input type="button"  onclick="openStation();" value="显示站点名"/><input type="button"  onclick="closeStation();" value="关闭站点名"/>
+    </div>
+    <div id="pic">
+        <input type="button"  onclick="openPic();" value="显示折线图"/>
     </div>
     <form name="reg_testdate">
         <select name="YYYY" onChange="YYYYDD(this.value)">
@@ -296,6 +313,20 @@ label_ls = []
         {
             map.removeOverlay(label_ls[i])
         }
+    }
+
+    function openPic(){
+        var date = year+month+day
+        var path = 'day_fig/'+date+'_'+board+'_'+vehicle+'.jpg'
+        console.log(path)
+        var obj = document.getElementById('day_cont')
+        obj.innerHTML='<img src="'+path+'" />';
+        var obj = document.getElementById('week_cont')
+        obj.innerHTML='<img src="'+path+'" />';
+        var obj = document.getElementById('month_cont')
+        obj.innerHTML='<img src="'+path+'" />';
+        var obj = document.getElementById('year_cont')
+        obj.innerHTML='<img src="'+path+'" />';
     }
     //closeHeatmap();
     function setGradient(){
