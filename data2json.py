@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import re
 import json
+import matplotlib.pyplot as plt
 #读取一卡通数据
 def read_data_yikatong(file_name,isonboard):
     if isonboard:
@@ -23,8 +24,8 @@ def classify_data(df):
     return df_bus,df_metro
 #处理小时数据
 def solve_data_hour(df,type,scale,lng,lat,station_ls,date,board):
-    df_group_hour = df.groupby(['timezone','station_name'])
-    cnt = df_group_hour['popnum'].sum()
+    df_group_hour_station = df.groupby(['timezone','station_name'])
+    cnt = df_group_hour_station['popnum'].sum()
     for i in range(24):
         if i < 9:
             time_slot = '0'+str(i)+':00-'+'0'+str(i+1)+':00'
@@ -87,7 +88,28 @@ def solve_data_hour(df,type,scale,lng,lat,station_ls,date,board):
         file_name = cur_dir_json+'/'+type+'_'+date+'_'+str(i)+".json"
         file = open(file_name, 'w', encoding='utf-8')
         json.dump(dicts, file, ensure_ascii=False)
+
+
+def solve_data_hour_pic(df,type,date,board):
+    df_group_hour = df.groupby(['timezone'])
+    cnt = df_group_hour['popnum'].sum()
+    res = [0 for i in range(24)]
+    for i in range(24):
+        if i < 9:
+            time_slot = '0'+str(i)+':00-'+'0'+str(i+1)+':00'
+        elif i == 9:
+            time_slot = '09:00-10:00'
+        else:
+            time_slot = str(i)+':00-'+str(i+1)+':00'
+
+        if time_slot in cnt.index:
+            res[i] = cnt[time_slot]
+        else:
+            res[i] = 0
+    return res
+
 #文件名为天
+#
 def solve_data_day(df,type,scale,date,board):
     #以每个站点划分数据
     #粗粒度，站点聚合，经纬度均值代表该聚类点经纬度
@@ -101,8 +123,17 @@ def solve_data_day(df,type,scale,date,board):
         #lng_lat = pd.merge(lat,lng,on = 'station_name')
         #print(lng_lat)
         print(date)
-        solve_data_hour(df,type,scale,lng,lat,station_ls,date,board)
-        #cata_list = list(df_group.groups.keys())
+        #solve_data_hour(df,type,scale,lng,lat,station_ls,date,board)
+        y_data = solve_data_hour_pic(df,type,date,board)
+        #绘图并保存
+        x_data = [str(i) for i in range(24)]
+        plt.xlabel("time_slot")
+        plt.ylabel("flow")
+        plt.plot(x_data, y_data, color='red', linewidth=2.0, linestyle='--')
+        pic_name = date + '_' +board + '_' + type + ".jpg"
+        plt.savefig("day_fig/"+pic_name)
+        plt.clf()
+
         #公交数据处理
         if type == "bus":
             pass
@@ -129,14 +160,8 @@ if __name__ == '__main__':
     month = '09'
     day = '03'
     date = year+month+day
-    onboard = False
-    path = os.getcwd()
     #参数配置
 
-    if onboard:
-        board = 'onboard'
-    else:
-        board = 'offboard'
     #测试区
     # test_data = read_data_yikatong("xicheng"+board+"num"+date+".csv",onboard)
     # df_bus,df_metro = classify_data(test_data)
@@ -145,27 +170,31 @@ if __name__ == '__main__':
     #solve_data(df_metro,'metro',scale)
 
     #业务区
-    if onboard:
-        path = path+"/ykt_onboard"
-    else:
-        path = path+"/ykt_offboard"
-    files = os.listdir(path)
-    for file in files:
-        date = re.sub("\D", "", file)
-        # if date == '2018':
-        #     my_data = read_data_yikatong(file,onboard)
-        #     df_bus,df_metro = classify_data(my_data)
-        #     solve_data_month_and_year(df_bus,'bus',scale,board)
-        #     solve_data_month_and_year(df_metro,'metro',scale,board)
+    for onboard in [True,False]:
+        path = os.getcwd()
+        if onboard:
+            path = path+"/ykt_onboard"
+            board = 'onboard'
+        else:
+            path = path+"/ykt_offboard"
+            board = 'offboard'
+        files = os.listdir(path)
+        for file in files:
+            date = re.sub("\D", "", file)
+            # if date == '2018':
+            #     my_data = read_data_yikatong(file,onboard)
+            #     df_bus,df_metro = classify_data(my_data)
+            #     solve_data_month_and_year(df_bus,'bus',scale,board)
+            #     solve_data_month_and_year(df_metro,'metro',scale,board)
 
-        if date != '':
-            my_data = read_data_yikatong(file,onboard)
-            df_bus,df_metro = classify_data(my_data)
-        else:
-            continue
-        if len(str(date)) == 8:
-            solve_data_day(df_bus,'bus',scale,date,board)
-            solve_data_day(df_metro,'metro',scale,date,board)
-        else:
-            solve_data_month_and_year(df_bus,'bus',scale,board)
-            solve_data_month_and_year(df_metro,'metro',scale,board)
+            if date != '':
+                my_data = read_data_yikatong(file,onboard)
+                df_bus,df_metro = classify_data(my_data)
+            else:
+                continue
+            if len(str(date)) == 8:
+                solve_data_day(df_bus,'bus',scale,date,board)
+                solve_data_day(df_metro,'metro',scale,date,board)
+            else:
+                solve_data_month_and_year(df_bus,'bus',scale,board)
+                solve_data_month_and_year(df_metro,'metro',scale,board)
