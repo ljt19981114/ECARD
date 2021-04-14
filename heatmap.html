@@ -86,6 +86,7 @@
     //
 
     var changeDD = 1;//->一个全局变量
+    var changeVEH = 1;
     function YYYYMMDDstart() {
         MonHead = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
         //先给年下拉框赋内容
@@ -176,6 +177,7 @@
             vehicle = "bus";
         else
             vehicle = "metro";
+        ChangeVEH = 1;
     }
     function IsPinYear(year) //判断是否闰平年
     {
@@ -270,42 +272,46 @@ function load(name) {
 
 label_ls = []
     function openStation(){
-        label_ls.length = 0
-        var cwd_json = year+'_json/'+month+'/'+day+'/'+board+'/'
-        //读取热力点数据
-        points_txt = [];
-        points = [];
-        var filename = vehicle+'_'+year+month+day+'_'+hour+'.json';
-        fetch(cwd_json+filename).then(rs => {
-            return rs.json();
-            }).then(rs => {
-        rs = rs.data;
-        //var data = [];
-        for (var i = 0; i < rs.length; i++) {
-                var numlist = rs[i];
-                var dic = {lat: parseFloat(numlist[1]), lng: parseFloat(numlist[2]), count: parseInt(numlist[3])}
-                points.push(dic);
-                var opts = {
-                    position: new BMap.Point(parseFloat(numlist[2]), parseFloat(numlist[1])), // 指定文本标注所在的地理位置
-                    offset: new BMap.Size(-50,-50) // 设置文本偏移量
-                };
-                //创建文本标注对象
-                var label = new BMap.Label(numlist[0], opts);
-                // 自定义文本标注样式
-                label.setStyle({
-                        color: 'blue',
-                        borderRadius: '5px',
-                        borderColor: '#ccc',
-                        padding: '10px',
-                        fontSize: '16px',
-                        height: '30px',
-                        lineHeight: '30px',
-                        fontFamily: '微软雅黑'
-                });
-                map.addOverlay(label);
-                label_ls.push(label)
-            }
-        });
+        if(changeVEH)
+        {
+            label_ls.length = 0
+            var cwd_json = year+'_json/'+month+'/'+day+'/'+board+'/'
+            //读取热力点数据
+            points_txt = [];
+            points = [];
+            var filename = vehicle+'_'+year+month+day+'_'+hour+'.json';
+            fetch(cwd_json+filename).then(rs => {
+                return rs.json();
+                }).then(rs => {
+            rs = rs.data;
+            //var data = [];
+            for (var i = 0; i < rs.length; i++) {
+                    var numlist = rs[i];
+                    var dic = {lat: parseFloat(numlist[1]), lng: parseFloat(numlist[2]), count: parseInt(numlist[3])}
+                    points.push(dic);
+                    var opts = {
+                        position: new BMap.Point(parseFloat(numlist[2]), parseFloat(numlist[1])), // 指定文本标注所在的地理位置
+                        offset: new BMap.Size(-50,-50) // 设置文本偏移量
+                    };
+                    //创建文本标注对象
+                    var label = new BMap.Label(numlist[0], opts);
+                    // 自定义文本标注样式
+                    label.setStyle({
+                            color: 'blue',
+                            borderRadius: '5px',
+                            borderColor: '#ccc',
+                            padding: '10px',
+                            fontSize: '16px',
+                            height: '30px',
+                            lineHeight: '30px',
+                            fontFamily: '微软雅黑'
+                    });
+                    map.addOverlay(label);
+                    label_ls.push(label)
+                }
+            });
+            changeVEH = 0;
+        }
     }
     function closeStation(){
         console.log(label_ls.length)
@@ -313,20 +319,24 @@ label_ls = []
         {
             map.removeOverlay(label_ls[i])
         }
+        changeVEH = 1;
     }
 
     function openPic(){
         var date = year+month+day
-        var path = 'day_fig/'+date+'_'+board+'_'+vehicle+'.jpg'
-        console.log(path)
+        var mon = year+month
+        var day_path = 'day_fig/'+date+'_'+board+'_'+vehicle+'.jpg'
+        var month_path = 'month_fig/'+mon+'_'+board+'_'+vehicle+'.jpg'
+        console.log(day_path)
+        console.log(month_path)
         var obj = document.getElementById('day_cont')
-        obj.innerHTML='<img src="'+path+'" />';
-        var obj = document.getElementById('week_cont')
-        obj.innerHTML='<img src="'+path+'" />';
+        obj.innerHTML='<img src="'+day_path+'" />';
+        // var obj = document.getElementById('week_cont')
+        // obj.innerHTML='<img src="'+path+'" />';
         var obj = document.getElementById('month_cont')
-        obj.innerHTML='<img src="'+path+'" />';
-        var obj = document.getElementById('year_cont')
-        obj.innerHTML='<img src="'+path+'" />';
+        obj.innerHTML='<img src="'+month_path+'" />';
+        // var obj = document.getElementById('year_cont')
+        // obj.innerHTML='<img src="'+path+'" />';
     }
     //closeHeatmap();
     function setGradient(){

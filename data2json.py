@@ -109,6 +109,7 @@ def solve_data_hour_pic(df,type,date,board):
     return res
 
 #文件名为天
+
 #
 def solve_data_day(df,type,scale,date,board):
     #以每个站点划分数据
@@ -123,23 +124,35 @@ def solve_data_day(df,type,scale,date,board):
         #lng_lat = pd.merge(lat,lng,on = 'station_name')
         #print(lng_lat)
         print(date)
+        #生成文件
         #solve_data_hour(df,type,scale,lng,lat,station_ls,date,board)
-        y_data = solve_data_hour_pic(df,type,date,board)
         #绘图并保存
-        x_data = [str(i) for i in range(24)]
-        plt.xlabel("time_slot")
-        plt.ylabel("flow")
-        plt.plot(x_data, y_data, color='red', linewidth=2.0)
-        pic_name = date + '_' +board + '_' + type + ".jpg"
-        plt.savefig("day_fig/"+pic_name)
-        plt.clf()
-
+        y_data = solve_data_hour_pic(df,type,date,board)
+        # x_data = [str(i) for i in range(24)]
+        # plt.xlabel("time_slot")
+        # plt.ylabel("flow")
+        # plt.plot(x_data, y_data, color='red', linewidth=2.0)
+        # pic_name = date + '_' +board + '_' + type + ".jpg"
+        # plt.savefig("day_fig/"+pic_name)
+        # plt.clf()
+        #汇总入月数据
+        day_sum = sum(y_data)
+        month = date[0:6]
+        day = int(date[6:8])
         #公交数据处理
         if type == "bus":
-            pass
+            if month in month_ls_bus.keys():
+                month_ls_bus[month][day - 1] = day_sum
+            else:
+                month_ls_bus[month] = [0 for i in range(31)]
+                month_ls_bus[month][day - 1] = day_sum
         #地铁数据处理
         else:
-            pass
+            if month in month_ls_metro.keys():
+                month_ls_metro[month][day - 1] = day_sum
+            else:
+                month_ls_metro[month] = [0 for i in range(31)]
+                month_ls_metro[month][day - 1] = day_sum
     else:
         pass
 
@@ -164,6 +177,11 @@ if __name__ == '__main__':
         pass
     else:
         os.mkdir('day_fig')
+    if os.path.exists('month_fig'):
+        pass
+    else:
+        os.mkdir('month_fig')
+
     #参数配置
 
     #测试区
@@ -175,6 +193,9 @@ if __name__ == '__main__':
 
     #业务区
     for onboard in [True,False]:
+        month_ls_bus = {}
+        month_ls_metro = {}
+        year_ls = {}
         path = os.getcwd()
         if onboard:
             path = path+"/ykt_onboard"
@@ -202,3 +223,27 @@ if __name__ == '__main__':
             else:
                 solve_data_month_and_year(df_bus,'bus',scale,board)
                 solve_data_month_and_year(df_metro,'metro',scale,board)
+
+        for key in month_ls_bus.keys():
+            type = "bus"
+            y_data = month_ls_bus[key]
+            x_data = [str(i + 1) for i in range(31)]
+            plt.xlabel("time_slot")
+            plt.ylabel("flow")
+            plt.title(key + '_' + board + '_' + type)
+            plt.plot(x_data, y_data, color='red', linewidth=2.0)
+            pic_name = key + '_' + board + '_' + type + ".jpg"
+            plt.savefig("month_fig/" + pic_name)
+            plt.clf()
+
+        for key in month_ls_metro.keys():
+            type = "metro"
+            y_data = month_ls_metro[key]
+            x_data = [str(i + 1) for i in range(31)]
+            plt.xlabel("time_slot")
+            plt.ylabel("flow")
+            plt.title(key + '_' + board + '_' + type)
+            plt.plot(x_data, y_data, color='red', linewidth=2.0)
+            pic_name = key + '_' + board + '_' + type + ".jpg"
+            plt.savefig("month_fig/" + pic_name)
+            plt.clf()
